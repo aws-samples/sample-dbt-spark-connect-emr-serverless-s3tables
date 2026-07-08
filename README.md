@@ -444,7 +444,7 @@ review calls out. The most important one for production:
 > **only from inside the VPC** (via VPN, AWS Client VPN, a bastion, or
 > PrivateLink), removing it from the public internet and shrinking the attack
 > surface. The scheduler and workers already run in your private subnets
-> regardless of this setting — it only controls exposure of the UI.
+> regardless of this setting, it only controls exposure of the UI.
 
 Other production hardening flagged in the review: narrow the security-group
 egress from all-traffic to `tcp/443`, and drop the `force_destroy` flags on the
@@ -547,4 +547,10 @@ security/         static security review: triaged summarize.md + raw checkov/tri
 - `dbt-spark 1.11.x` (which supports Spark 4 / dbt-core 1.12) is currently a pre-release on PyPI; pin an exact version for reproducibility (this repo pins `1.11.0b2`).
 - dbt-spark's `session` method calls `enableHiveSupport()`, which Spark Connect politely rejects (`CANNOT_MODIFY_CONFIG`). It's a harmless warning (silenced via `PYTHONWARNINGS`), because the S3 Tables catalog is a named default catalog set on the remote session.
 - Content from AWS documentation referenced here was paraphrased for licensing compliance.
-```
+
+
+## Disclaimer
+
+This sample code is provided to you as AWS Content under the AWS Customer Agreement, or the relevant written agreement between you and AWS (whichever applies). You should not use this code in your production accounts, or on production or other critical data. You are responsible for testing, securing, and optimizing the sample code as appropriate for production-grade use based on your specific quality control practices and standards. Deploying this content may incur AWS charges for creating or using AWS chargeable resources, such as EC2 instances, MWAA environments, or S3 storage.
+
+
