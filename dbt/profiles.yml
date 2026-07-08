@@ -1,0 +1,21 @@
+# dbt profile for EMR Serverless via Apache Spark Connect using the STOCK dbt-spark
+# adapter (no forked/branched code).
+#
+# The runner starts an EMR Serverless interactive session, then exports:
+#
+#   SPARK_REMOTE      sc://<host>:443/;use_ssl=true;x-aws-proxy-auth=<token>
+#   DBT_SPARK_SCHEMA  the S3 Tables namespace to build into
+#
+# With `method: session`, dbt-spark calls SparkSession.builder.getOrCreate(), which
+# reads SPARK_REMOTE and opens a REMOTE Spark Connect session against EMR Serverless.
+# `host` is required by the profile schema but ignored when SPARK_REMOTE is set.
+# See: https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/tutorials-dbt.html
+emr_serverless:
+  target: dev
+  outputs:
+    dev:
+      type: spark
+      method: session
+      host: NA
+      schema: "{{ env_var('DBT_SPARK_SCHEMA', 'analytics') }}"
+      threads: 4

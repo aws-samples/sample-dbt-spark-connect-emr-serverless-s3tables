@@ -1,0 +1,40 @@
+version: 2
+
+seeds:
+  - name: raw_customers
+    description: "Raw customer records seeded into S3 Tables (Iceberg)."
+    columns:
+      - name: id
+        tests: [not_null, unique]
+  - name: raw_orders
+    description: "Raw order records seeded into S3 Tables (Iceberg)."
+    columns:
+      - name: id
+        tests: [not_null, unique]
+  - name: raw_payments
+    description: "Raw payment records (amounts in cents) seeded into S3 Tables (Iceberg)."
+    columns:
+      - name: id
+        tests: [not_null, unique]
+
+models:
+  - name: stg_customers
+    description: "Cleaned customers (ephemeral)."
+    columns:
+      - name: customer_id
+        tests: [not_null, unique]
+  - name: stg_orders
+    description: "Cleaned orders (ephemeral)."
+    columns:
+      - name: order_id
+        tests: [not_null, unique]
+      - name: status
+        tests:
+          - accepted_values:
+              arguments:
+                values: ["completed", "returned", "placed", "shipped", "return_pending"]
+  - name: stg_payments
+    description: "Cleaned payments in dollars (ephemeral)."
+    columns:
+      - name: payment_id
+        tests: [not_null, unique]

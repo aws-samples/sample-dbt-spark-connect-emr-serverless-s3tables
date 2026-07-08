@@ -1,0 +1,172 @@
+
+Report Summary
+
+┌──────────────────────────────────────────────────────────────┬───────────┬───────────────────┐
+│                            Target                            │   Type    │ Misconfigurations │
+├──────────────────────────────────────────────────────────────┼───────────┼───────────────────┤
+│ .                                                            │ terraform │         0         │
+├──────────────────────────────────────────────────────────────┼───────────┼───────────────────┤
+│ artifacts.tf                                                 │ terraform │         2         │
+├──────────────────────────────────────────────────────────────┼───────────┼───────────────────┤
+│ emr_serverless.tf                                            │ terraform │         1         │
+├──────────────────────────────────────────────────────────────┼───────────┼───────────────────┤
+│ iam.tf                                                       │ terraform │         1         │
+├──────────────────────────────────────────────────────────────┼───────────┼───────────────────┤
+│ mwaa.tf                                                      │ terraform │         1         │
+├──────────────────────────────────────────────────────────────┼───────────┼───────────────────┤
+│ terraform-aws-modules/vpc/aws/.terraform/modules/vpc/main.tf │ terraform │         0         │
+├──────────────────────────────────────────────────────────────┼───────────┼───────────────────┤
+│ vpc.tf                                                       │ terraform │         1         │
+└──────────────────────────────────────────────────────────────┴───────────┴───────────────────┘
+Legend:
+- '-': Not scanned
+- '0': Clean (no security findings detected)
+
+
+artifacts.tf (terraform)
+========================
+Tests: 2 (SUCCESSES: 0, FAILURES: 2)
+Failures: 2 (UNKNOWN: 0, LOW: 1, MEDIUM: 0, HIGH: 1, CRITICAL: 0)
+
+AWS-0089 (LOW): Bucket has logging disabled
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+Ensures S3 bucket logging is enabled for S3 buckets
+
+See https://avd.aquasec.com/misconfig/aws-0089
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ artifacts.tf:8-13
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   8 ┌ resource "aws_s3_bucket" "artifacts" {
+   9 │   bucket = local.artifacts_bucket_name
+  10 │ 
+  11 │   # Example convenience: allow destroy even when non-empty.
+  12 │   force_destroy = true
+  13 └ }
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+AWS-0132 (HIGH): Bucket does not encrypt data with a customer managed key.
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+Encryption using AWS keys provides protection for your S3 buckets. To gain greater control over encryption, such as key rotation, access policies, and auditability, use customer managed keys (CMKs) with SSE-KMS.
+Note that SSE-KMS is not supported for S3 server access logging destination buckets; in such cases, use SSE-S3 instead.
+
+
+See https://avd.aquasec.com/misconfig/aws-0132
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ artifacts.tf:24-33
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  24 ┌ resource "aws_s3_bucket_server_side_encryption_configuration" "artifacts" {
+  25 │   bucket = aws_s3_bucket.artifacts.id
+  26 │ 
+  27 │   rule {
+  28 │     apply_server_side_encryption_by_default {
+  29 │       sse_algorithm = "aws:kms"
+  30 │     }
+  31 │     bucket_key_enabled = true
+  32 │   }
+  33 └ }
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+emr_serverless.tf (terraform)
+=============================
+Tests: 1 (SUCCESSES: 0, FAILURES: 1)
+Failures: 1 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 1)
+
+AWS-0104 (CRITICAL): Security group rule allows unrestricted egress to any IP address.
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+Opening up ports to connect out to the public internet is generally to be avoided. You should restrict access to IP addresses or ranges that are explicitly required where possible.
+
+
+See https://avd.aquasec.com/misconfig/aws-0104
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ emr_serverless.tf:15
+   via emr_serverless.tf:10-16 (egress)
+    via emr_serverless.tf:5-19 (aws_security_group.emr)
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+   5   resource "aws_security_group" "emr" {
+   .   
+  15 [     cidr_blocks = ["0.0.0.0/0"]
+  ..   
+  19   }
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+iam.tf (terraform)
+==================
+Tests: 1 (SUCCESSES: 0, FAILURES: 1)
+Failures: 1 (UNKNOWN: 0, LOW: 0, MEDIUM: 1, HIGH: 0, CRITICAL: 0)
+
+AWS-0342 (MEDIUM): IAM policy allows 'iam:PassRole' action
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+Ensures any IAM pass role attached to roles are flagged and warned.
+
+See https://avd.aquasec.com/misconfig/aws-0342
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ iam.tf:93-130
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  93 ┌ data "aws_iam_policy_document" "session_caller" {
+  94 │   statement {
+  95 │     sid    = "ApplicationLevelAccess"
+  96 │     effect = "Allow"
+  97 │     actions = [
+  98 │       "emr-serverless:StartSession",
+  99 │       "emr-serverless:ListSessions",
+ 100 │       "emr-serverless:GetApplication",
+ 101 └       "emr-serverless:StartApplication",
+ ...   
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+mwaa.tf (terraform)
+===================
+Tests: 1 (SUCCESSES: 0, FAILURES: 1)
+Failures: 1 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 1)
+
+AWS-0104 (CRITICAL): Security group rule allows unrestricted egress to any IP address.
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+Opening up ports to connect out to the public internet is generally to be avoided. You should restrict access to IP addresses or ranges that are explicitly required where possible.
+
+
+See https://avd.aquasec.com/misconfig/aws-0104
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ mwaa.tf:135
+   via mwaa.tf:130-136 (egress)
+    via mwaa.tf:124-139 (aws_security_group.mwaa[0])
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ 124   resource "aws_security_group" "mwaa" {
+ ...   
+ 135 [     cidr_blocks = ["0.0.0.0/0"]
+ ...   
+ 139   }
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+
+vpc.tf (terraform)
+==================
+Tests: 1 (SUCCESSES: 0, FAILURES: 1)
+Failures: 1 (UNKNOWN: 0, LOW: 0, MEDIUM: 0, HIGH: 0, CRITICAL: 1)
+
+AWS-0104 (CRITICAL): Security group rule allows unrestricted egress to any IP address.
+═════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════
+Opening up ports to connect out to the public internet is generally to be avoided. You should restrict access to IP addresses or ranges that are explicitly required where possible.
+
+
+See https://avd.aquasec.com/misconfig/aws-0104
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ vpc.tf:61
+   via vpc.tf:56-62 (egress)
+    via vpc.tf:41-65 (aws_security_group.vpce[0])
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  41   resource "aws_security_group" "vpce" {
+  ..   
+  61 [     cidr_blocks = ["0.0.0.0/0"]
+  ..   
+  65   }
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+
+

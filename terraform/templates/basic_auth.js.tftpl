@@ -1,0 +1,19 @@
+// CloudFront Function (viewer-request): HTTP Basic Auth for the dbt docs site.
+// The expected credential is precomputed by Terraform as base64("user:password").
+function handler(event) {
+    var request = event.request;
+    var headers = request.headers;
+    var expected = "Basic ${auth_b64}";
+
+    var provided = headers.authorization && headers.authorization.value;
+    if (provided !== expected) {
+        return {
+            statusCode: 401,
+            statusDescription: "Unauthorized",
+            headers: {
+                "www-authenticate": { value: "Basic realm=\"${realm}\"" }
+            }
+        };
+    }
+    return request;
+}

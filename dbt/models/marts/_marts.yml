@@ -1,0 +1,22 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: "Customer dimension with lifetime order and payment metrics (Iceberg table on S3 Tables)."
+    columns:
+      - name: customer_id
+        tests: [not_null, unique]
+      - name: number_of_orders
+        tests: [not_null]
+      - name: lifetime_value
+        tests: [not_null]
+
+  - name: fct_orders
+    description: "Order fact table, incrementally merged into an Iceberg table on S3 Tables."
+    columns:
+      - name: order_id
+        tests: [not_null, unique]
+      - name: customer_id
+        tests: [not_null]
+      - name: amount
+        tests: [not_null]

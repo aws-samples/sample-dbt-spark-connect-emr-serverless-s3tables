@@ -1,0 +1,48 @@
+# Copy to terraform.tfvars and adjust.
+
+# AWS region. Must offer EMR Serverless emr-spark-8.0.0, S3 Tables and MWAA.
+region      = "us-east-1"
+name_prefix = "dbt-emrs"
+
+# Networking
+vpc_cidr           = "10.20.0.0/16"
+az_count           = 2
+single_nat_gateway = true # set false for one NAT per AZ (HA, costs more)
+
+# EMR Serverless (Apache Spark 4.0.2)
+emr_release_label = "emr-spark-8.0.0"
+emr_architecture  = "ARM64"
+emr_max_cpu       = "16 vCPU"
+emr_max_memory    = "64 GB"
+
+# Pre-initialized capacity makes interactive sessions start in seconds instead of
+# a minute or two, at the cost of idle compute while the app is started.
+enable_pre_initialized_capacity = false
+
+# S3 Tables
+s3tables_namespace = "analytics"
+spark_catalog_name = "s3tablesbucket"
+
+# Leave empty to use the S3 Tables catalog classes bundled with emr-spark-8.0.0.
+# If your release does not bundle them, pin a compatible client-catalog runtime:
+# s3tables_spark_packages = "software.amazon.s3tables:s3-tables-catalog-for-iceberg-runtime:0.1.8"
+s3tables_spark_packages = ""
+
+# dbt runtime (stock dbt-spark[session] from PyPI + SPARK_REMOTE; no fork).
+# Pin to versions matching the EMR release Spark line. Keep in sync with runner/pyproject.toml.
+dbt_spark_pip_spec = "dbt-spark[session]==1.11.0b2"
+pyspark_version    = "4.0.2"
+
+# MWAA
+enable_mwaa                = true
+mwaa_airflow_version       = "2.10.3"
+mwaa_environment_class     = "mw1.small"
+mwaa_webserver_access_mode = "PUBLIC_ONLY"
+
+# Password-protected dbt docs site (lineage + catalog) on CloudFront.
+# Generate the docs first: run_dbt.py -- docs generate --static, then copy
+# dbt/target/static_index.html to generated/docs/index.html (see README).
+enable_docs_site         = false
+docs_basic_auth_username = "dbt"
+# Leave empty to auto-generate a strong password (terraform output -raw docs_password).
+docs_basic_auth_password = ""

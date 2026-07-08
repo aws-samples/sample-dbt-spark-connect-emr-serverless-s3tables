@@ -1,0 +1,26 @@
+[project]
+name = "emr-dbt-runner"
+version = "0.1.0"
+description = "Run dbt against Amazon EMR Serverless via Spark Connect (SPARK_REMOTE + x-aws-proxy-auth)."
+readme = "README.md"
+# Match the EMR Serverless worker Python (emr-spark-8.0.0 default is 3.11) so that
+# any Python UDFs and the pyspark client line up with the remote driver.
+requires-python = ">=3.11,<3.12"
+
+dependencies = [
+    "boto3>=1.34",
+    # Stock, released dbt-spark with the `session` method. Combined with the
+    # SPARK_REMOTE environment variable, PySpark's SparkSession.builder.getOrCreate()
+    # opens a REMOTE Spark Connect session to EMR Serverless - no forked adapter.
+    # See: https://docs.aws.amazon.com/emr/latest/EMR-Serverless-UserGuide/tutorials-dbt.html
+    # 1.11.x supports Spark 4 / dbt-core 1.12 (the emr-spark-8.0.0 line). Pinned so
+    # local and MWAA install the same version. Keep in sync with terraform var dbt_spark_pip_spec.
+    "dbt-spark[session]==1.11.0b2",
+    # dbt-spark[session] pulls plain pyspark; the Spark Connect client also needs the
+    # gRPC deps, so pin pyspark[connect] to the EMR Serverless Spark version (4.0.2).
+    "pyspark[connect]==4.0.2",
+]
+
+[tool.uv]
+# This is an application (a set of scripts), not a distributable package.
+package = false

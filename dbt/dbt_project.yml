@@ -1,0 +1,36 @@
+name: "emr_serverless_dbt"
+version: "1.0.0"
+config-version: 2
+
+# The profile is defined in profiles.yml (rendered from environment variables that
+# the runner populates from the EMR Serverless Spark Connect session).
+profile: "emr_serverless"
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+target-path: "target"
+clean-targets:
+  - "target"
+  - "dbt_packages"
+
+# Everything is Apache Iceberg because the S3 Tables catalog only stores Iceberg
+# tables. Setting file_format=iceberg makes dbt-spark emit `USING iceberg` DDL.
+seeds:
+  emr_serverless_dbt:
+    +file_format: iceberg
+    +quote_columns: false
+
+models:
+  emr_serverless_dbt:
+    +file_format: iceberg
+    staging:
+      # Ephemeral: staging logic is inlined into the marts as CTEs, so no views or
+      # tables are created for the staging layer. This sidesteps Iceberg view
+      # support questions and keeps the S3 Tables namespace tidy.
+      +materialized: ephemeral
+    marts:
+      +materialized: table
