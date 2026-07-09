@@ -7,12 +7,26 @@ resource "aws_security_group" "emr" {
   description = "EMR Serverless worker ENIs"
   vpc_id      = module.vpc.vpc_id
 
+  # Outbound to AWS APIs (STS, CloudWatch Logs, EMR Serverless + sessions
+  # endpoints), S3/S3 Tables via the gateway endpoint, and PyPI via NAT are all
+  # HTTPS, so egress to the internet is pinned to 443.
   egress {
-    description = "Allow all egress (S3 gateway endpoint, S3 Tables API via NAT, etc.)"
+    description = "HTTPS to AWS APIs, S3, interface endpoints, and PyPI via NAT"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Spark driver <-> executor, shuffle and block-manager traffic between worker
+  # ENIs uses dynamic high ports, so it cannot be limited to 443. Scope it to
+  # this security group (not the internet) to stay least-privilege.
+  egress {
+    description = "Intra-application worker communication (Spark)"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    self        = true
   }
 
   tags = merge(local.common_tags, { Name = "${local.name}-emr-serverless" })

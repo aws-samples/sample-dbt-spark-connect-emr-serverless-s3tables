@@ -139,12 +139,26 @@ resource "aws_security_group" "mwaa" {
   description = "MWAA environment"
   vpc_id      = module.vpc.vpc_id
 
+  # MWAA reaches S3, SQS (Celery), CloudWatch Logs, KMS, ECR and the EMR
+  # Serverless endpoints over HTTPS, so internet-bound egress is pinned to 443.
   egress {
-    description = "Allow all egress"
+    description = "HTTPS to AWS services"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # MWAA runs its scheduler/worker/web components as Fargate tasks that talk to
+  # each other and to the Celery/metadata backends on dynamic ports. AWS's
+  # documented least-privilege MWAA security group keeps this self-referencing
+  # all-traffic egress alongside the 443 rule.
+  egress {
+    description = "MWAA internal component communication"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    self        = true
   }
 
   tags = merge(local.common_tags, { Name = "${local.name}-mwaa" })
