@@ -553,4 +553,31 @@ security/         static security review: triaged summarize.md + raw checkov/tri
 
 This sample code is provided to you as AWS Content under the AWS Customer Agreement, or the relevant written agreement between you and AWS (whichever applies). You should not use this code in your production accounts, or on production or other critical data. You are responsible for testing, securing, and optimizing the sample code as appropriate for production-grade use based on your specific quality control practices and standards. Deploying this content may incur AWS charges for creating or using AWS chargeable resources, such as EC2 instances, MWAA environments, or S3 storage.
 
+**Cleaning up S3 Tables permanently deletes your data.** dbt creates the Iceberg
+tables (`raw_*`, `stg_*`, `dim_*`, `fct_*`) inside the S3 Tables namespace at run
+time, so they are not tracked in Terraform state. While the namespace is still
+populated, `terraform destroy` stops with
+`The namespace that you tried to delete is not empty`. Purge the tables first,
+then destroy — **this is irreversible and removes every table and all of its
+data in the namespace:**
+
+```bash
+cd terraform
+
+ARN=$(terraform output -raw table_bucket_arn)
+NS=$(terraform output -raw s3tables_namespace)
+REGION=$(terraform output -raw region)
+
+# Deletes EVERY table dbt created in the namespace. This cannot be undone.
+aws s3tables list-tables --table-bucket-arn "$ARN" --namespace "$NS" \
+  --region "$REGION" --query 'tables[].name' --output text \
+  | tr '\t' '\n' | while read -r name; do
+      [ -n "$name" ] && aws s3tables delete-table \
+        --table-bucket-arn "$ARN" --namespace "$NS" --name "$name" --region "$REGION"
+    done
+
+# The namespace is now empty, so Terraform can remove everything else.
+terraform destroy
+```
+
 
