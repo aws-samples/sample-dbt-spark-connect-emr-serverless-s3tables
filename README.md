@@ -446,9 +446,11 @@ review calls out. The most important one for production:
 > surface. The scheduler and workers already run in your private subnets
 > regardless of this setting, it only controls exposure of the UI.
 
-Other production hardening flagged in the review: narrow the security-group
-egress from all-traffic to `tcp/443`, and drop the `force_destroy` flags on the
-S3 buckets (and the S3 Tables bucket) so data can't be emptied on `destroy`.
+The security-group egress is already narrowed from all-traffic to `tcp/443`; the
+`emr` and `mwaa` groups additionally keep a self-referencing all-ports rule so
+Spark's and MWAA's dynamic-port intra-cluster traffic still works. The remaining
+hardening flagged in the review: drop the `force_destroy` flags on the S3 buckets
+(and the S3 Tables bucket) so data can't be emptied on `destroy`.
 
 ---
 
